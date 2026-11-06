@@ -26,8 +26,8 @@ function exclusionReason(memory: Memory, service: string | undefined, area: stri
 
 function score(memory: Memory, service: string | undefined, area: string | undefined): number {
   let total = 0;
+  if (CORE_KEYS.includes(memory.key)) total += 4; // must beat service scope, or notes crowd these out
   if (memory.scope === service) total += 3;
-  if (CORE_KEYS.includes(memory.key)) total += 2;
   if (area && mentionedArea(memory) === area) total += 2;
   if (memory.kind === "explicit") total += 1;
   return total;
