@@ -98,7 +98,7 @@ export class DemoApp {
 
   approve(approvalId: string): Promise<AgentReply> {
     return this.serial(async () => {
-      this.emit({ kind: "chat", role: "user", text: "Approved with the button" });
+      this.emit({ kind: "chat", role: "user", text: "Approved with the button" }); // same text the agent stores
       return this.publish(await this.parts.agent.approve(this.sessionId, DEMO_USER, approvalId));
     });
   }
@@ -108,6 +108,24 @@ export class DemoApp {
       await this.parts.monitor.tick();
       if (this.listeners.length > 0) this.deliverQueued();
     });
+  }
+
+  // What a page needs to catch up after connecting or reloading.
+  replay(): DemoEvent[] {
+    const chat: DemoEvent[] = this.parts.agent.deps.chat.history(DEMO_USER).map((message) => ({
+      kind: "chat", role: message.role, text: message.text,
+    }));
+    const trace: DemoEvent[] = this.parts.sink.events.map((event) => ({ kind: "trace", event }));
+    const events = [...chat, ...trace];
+
+    // Put the Approve button back on a card that is still waiting.
+    const task = this.parts.agent.deps.tasks.active(DEMO_USER);
+    const open = task?.state === "AWAITING_APPROVAL" ? this.parts.agent.deps.approvals.open(task.task_id) : undefined;
+    if (open) {
+      const card = [...chat].reverse().find((event) => event.kind === "chat" && event.role === "assistant");
+      if (card?.kind === "chat") card.approval = { approval_id: open.approval_id, card: open.card };
+    }
+    return events;
   }
 
   // A newly connected page gets anything queued while nobody was looking.

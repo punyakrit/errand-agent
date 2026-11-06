@@ -27,6 +27,7 @@ function openEventStream(app: DemoApp, request: IncomingMessage, response: Serve
   response.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive" });
   response.write(": connected\n\n"); // sends the headers now, so the page knows it is connected
   const write = (event: DemoEvent) => response.write(`data: ${JSON.stringify(event)}\n\n`);
+  for (const event of app.replay()) write(event);
   const stop = app.onEvent(write);
   app.deliverQueued();
   request.on("close", stop);

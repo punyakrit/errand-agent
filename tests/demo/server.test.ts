@@ -92,6 +92,23 @@ describe("demo server", () => {
     await reader.cancel();
   });
 
+  it("a reloaded page gets the chat, the trace and the live Approve button back", async () => {
+    const card = await toApproval();
+    const events = app.replay();
+    const chat = events.filter((event) => event.kind === "chat");
+    expect(chat.map((event) => event.kind === "chat" && event.text)).toContain("plumber");
+    expect(events.some((event) => event.kind === "trace" && event.event.type === "approval_created")).toBe(true);
+    const last = chat.at(-1);
+    expect(last?.kind === "chat" && last.approval?.approval_id).toBe(card.approval.approval_id);
+  });
+
+  it("a reloaded page shows no Approve button once the card is used", async () => {
+    app.mock.configure({ forceBook: ["success"] });
+    const card = await toApproval();
+    await post("/approve", { approval_id: card.approval.approval_id });
+    expect(app.replay().some((event) => event.kind === "chat" && event.approval)).toBe(false);
+  });
+
   it("books through the Approve button", async () => {
     app.mock.configure({ forceBook: ["success"] });
     const card = await toApproval();

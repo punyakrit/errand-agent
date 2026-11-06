@@ -65,7 +65,7 @@ export class Agent {
 
   // The Approve button on the approval card.
   async approve(sessionId: string, userId: string, approvalId: string): Promise<AgentReply> {
-    const messageId = this.deps.chat.add(sessionId, userId, "user", "[Approve button]");
+    const messageId = this.deps.chat.add(sessionId, userId, "user", "Approved with the button");
     const run = new Run(this.deps, sessionId, userId, messageId, this.sink.startRun(sessionId, "approve_click"));
     try {
       return finish(run, await handleApproveClick(run, approvalId));
