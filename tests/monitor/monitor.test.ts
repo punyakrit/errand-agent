@@ -198,6 +198,27 @@ describe("each event is handled once", () => {
     expect(made.agent.deps.outbox.drain(USER)).toHaveLength(1);
   });
 
+  it("does not act again if the process died before marking the booking seen", async () => {
+    const made = setup();
+    made.mock.providerCancels(UPCOMING_AC_BOOKING);
+    await made.monitor.tick();
+    made.agent.deps.db.prepare("DELETE FROM seen_bookings WHERE booking_id = ?").run(UPCOMING_AC_BOOKING);
+    await new Monitor(made.restart(), [USER]).tick();
+    expect(eventsAbout(made, "provider_cancelled")).toHaveLength(1);
+    expect(made.agent.deps.tasks.all(USER)).toHaveLength(1);
+  });
+
+  it("logs a user's own cancellation only once", async () => {
+    const made = setup();
+    await made.monitor.tick();
+    const args = { booking_id: UPCOMING_AC_BOOKING, idempotency_key: "c" };
+    await made.mock.cancel(args);
+    await made.mock.cancel(args);
+    await made.monitor.tick();
+    await made.monitor.tick();
+    expect(eventsAbout(made, "user_cancelled")).toHaveLength(1);
+  });
+
   it("finishes the event after a crash part way through, once", async () => {
     let crashed: () => void;
     const reached = new Promise<void>((resolve) => { crashed = resolve; });
