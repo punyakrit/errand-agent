@@ -181,6 +181,18 @@ describe("tool failures", () => {
     expect(events("run_end")[0]).toMatchObject({ reason: "tool_error", tool_calls: 4 });
   });
 
+  it("traces and counts a tool call that code stopped before it reached the provider", async () => {
+    const { send, events } = makeAgent([
+      tool("hold_slot", { provider_id: "pl_1", slot: "2026-11-10T09:00:00+05:30" }),
+      tool("search_providers", { service: "plumber", area: "Indiranagar", date_range: { from: "2026-11-09", to: "2026-11-15" } }),
+      say("ok"),
+    ]);
+    await send("hi");
+    expect(events("tool_call").map((event) => event.name)).toEqual(["hold_slot", "search_providers"]);
+    expect(events("tool_call")[0]).toMatchObject({ args: { provider_id: "pl_1" }, result: { error: "no_active_task" } });
+    expect(events("run_end")[0]).toMatchObject({ tool_calls: 2 });
+  });
+
   it("does not retry a side effect that throws", async () => {
     const { send, events, llm } = makeAgent(
       [

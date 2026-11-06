@@ -57,3 +57,11 @@ Each entry was logged when it happened. The failing test was committed before th
 - **Effect:** a request with every detail in the first message burned all its turns and got a limit message. This cannot show up in scripted evals, because they never go through strict decoding.
 - **Fix:** `kind` and `target_booking_id` now come first. Empty strings also count as not given.
 - **Regression test:** `lists kind before the request fields, because strict output follows schema order` in `tests/agent/loop.test.ts`.
+
+## 8. Blocked tool calls were missing from the trace
+
+- **What broke:** a live smoke run showed two `gate_decision` entries for a blocked `hold_slot`, but no `tool_call` event for either attempt.
+- **Why:** `dispatch()` skipped tracing for mock-named tools, assuming `callMock` always does it. That is false when code stops the call before it reaches the mock.
+- **Effect:** the tool log hid the calls you most want to see, and they did not count towards the 20-call limit.
+- **Fix:** `dispatch()` now traces and counts any tool that did not reach the mock.
+- **Regression test:** `traces and counts a tool call that code stopped before it reached the provider` in `tests/agent/loop.test.ts`.
