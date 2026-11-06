@@ -32,8 +32,11 @@ function clip(text: string): string {
   return text.length > CONTEXT.maxMessageChars ? `${text.slice(0, CONTEXT.maxMessageChars)}...` : text;
 }
 
-// Newest messages that fit, always including the current one. The first
-// message sent must be from the user.
+// The first message sent must be from the user. A proactive notice has no user
+// message before it, so this line goes in front rather than dropping the notice.
+const CONTINUING = "(Continuing our conversation.)";
+
+// Newest messages that fit, always including the current one.
 function pickRecent(history: ChatMessage[], budgetTokens: number): ChatMessage[] {
   const recent: ChatMessage[] = [];
   let used = 0;
@@ -44,7 +47,6 @@ function pickRecent(history: ChatMessage[], budgetTokens: number): ChatMessage[]
     recent.unshift(message);
     used += cost;
   }
-  while (recent.length > 1 && recent[0]?.role !== "user") recent.shift();
   return recent;
 }
 
@@ -75,6 +77,7 @@ export function buildContext(run: Run): BuiltContext {
   const summary = summariseOlderChat(older, CONTEXT.summaryTokens);
   const system = summary ? `${fixedSystem}\n\n<older_chat>\n${summary}\n</older_chat>` : fixedSystem;
   const messages = recent.map((message) => ({ role: message.role, content: clip(message.text) }));
+  if (messages[0]?.role === "assistant") messages.unshift({ role: "user", content: CONTINUING });
 
   return {
     system,
