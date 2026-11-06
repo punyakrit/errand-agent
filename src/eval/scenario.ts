@@ -7,6 +7,7 @@ export interface Scenario {
   note: string;
   mode?: "scripted" | "recorded";
   world?: WorldOptions;
+  makeWorld?(): WorldOptions; // for options that hold state, so each run starts fresh
   expect: Facts; // the facts that must hold, compared with what really happened
   run(world: World): Promise<void>;
   extra?(world: World): Facts; // further computed facts for this scenario

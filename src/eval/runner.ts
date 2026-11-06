@@ -21,7 +21,7 @@ function same(a: unknown, b: unknown): boolean {
 }
 
 export async function runScenario(scenario: Scenario): Promise<ScenarioResult> {
-  const world = new World(scenario.world);
+  const world = new World(scenario.makeWorld?.() ?? scenario.world);
   let error: string | undefined;
   try {
     await scenario.run(world);

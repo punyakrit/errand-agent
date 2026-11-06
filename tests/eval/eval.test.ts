@@ -15,6 +15,12 @@ describe("scenarios", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
+  it("replays at least 3 real recordings from the project's model", () => {
+    const recorded = SCENARIOS.filter((scenario) => scenario.mode === "recorded");
+    expect(recorded.length).toBeGreaterThanOrEqual(3);
+    for (const scenario of recorded) expect(scenario.expect.model_in_recording).toBe("claude-sonnet-5-5");
+  });
+
   it.each(SCENARIOS.map((scenario) => [`${scenario.id}. ${scenario.name}`, scenario] as const))("%s", async (_, scenario) => {
     const result = await runScenario(scenario);
     expect(result.notes, result.notes).toBe(scenario.note);

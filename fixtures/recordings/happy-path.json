@@ -1,0 +1,214 @@
+{
+  "note": "Real claude-sonnet-5-5 responses for a full booking. Model: claude-sonnet-5-5.",
+  "responses": [
+    {
+      "model": "claude-sonnet-5-5",
+      "id": "msg_011CgnGpokBChqn9Hs1aZi93",
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01AamJx5WTBxTRZRkidu6yGZ",
+          "name": "update_request",
+          "input": {
+            "service": "plumber",
+            "area": "Indiranagar",
+            "date_from": "2026-11-09",
+            "date_to": "2026-11-15",
+            "time_from": "06:00",
+            "time_to": "12:00",
+            "budget_inr": 1500,
+            "notes": "kitchen tap, mornings only",
+            "new_slot": ""
+          },
+          "caller": {
+            "type": "direct"
+          }
+        }
+      ],
+      "container": null,
+      "stop_reason": "tool_use",
+      "stop_sequence": null,
+      "stop_details": null,
+      "usage": {
+        "input_tokens": 3580,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 262,
+        "output_tokens_details": {
+          "thinking_tokens": 0
+        },
+        "service_tier": "standard",
+        "inference_geo": "global",
+        "speed": "standard"
+      },
+      "diagnostics": null
+    },
+    {
+      "model": "claude-sonnet-5-5",
+      "id": "msg_011CgnGq36rtFDXTaTp6zmEh",
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01Ki7VtY5tkzBH8GsCLgR2CP",
+          "name": "search_providers",
+          "input": {
+            "service": "plumber",
+            "area": "Indiranagar",
+            "date_range": {
+              "from": "2026-11-09",
+              "to": "2026-11-15"
+            }
+          },
+          "caller": {
+            "type": "direct"
+          }
+        }
+      ],
+      "container": null,
+      "stop_reason": "tool_use",
+      "stop_sequence": null,
+      "stop_details": null,
+      "usage": {
+        "input_tokens": 3988,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 121,
+        "output_tokens_details": {
+          "thinking_tokens": 0
+        },
+        "service_tier": "standard",
+        "inference_geo": "global",
+        "speed": "standard"
+      },
+      "diagnostics": null
+    },
+    {
+      "model": "claude-sonnet-5-5",
+      "id": "msg_011CgnGqCsy6NuYZBpncLEwG",
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "Here are the morning options in Indiranagar under ₹1,500:\n\n- **Aqua Fix Plumbers**: ₹650, rated 4.3. Slots: today 10:00, Nov 10, 11 and 12 at 08:00.\n- **Sharma Pipe Works**: ₹800, rated 4.7. Slots: today 11:00, Nov 10, 11 and 12 at 09:00.\n- **Bengaluru Tap Doctors**: ₹1,100, rated 4.8. Slots: today 10:00, Nov 10, 11 and 12 at 09:00.\n- **FlowRight Services**: ₹1,400, rated 4.5. Slots: today, Nov 10, 11 and 12 at 10:00.\n\nEach provider has more slots available. Which provider and time would you like?"
+        }
+      ],
+      "container": null,
+      "stop_reason": "end_turn",
+      "stop_sequence": null,
+      "stop_details": null,
+      "usage": {
+        "input_tokens": 4644,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 271,
+        "output_tokens_details": {
+          "thinking_tokens": 0
+        },
+        "service_tier": "standard",
+        "inference_geo": "global",
+        "speed": "standard"
+      },
+      "diagnostics": null
+    },
+    {
+      "model": "claude-sonnet-5-5",
+      "id": "msg_011CgnGqT2mbDjw8Ja7GtPui",
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "Top-rated is Bengaluru Tap Doctors (4.8), earliest slot today 10:00."
+        },
+        {
+          "type": "tool_use",
+          "id": "toolu_015ZdEXGmowwdXSKErFGUwou",
+          "name": "hold_slot",
+          "input": {
+            "provider_id": "pl_3",
+            "slot": "2026-11-09T10:00:00+05:30"
+          },
+          "caller": {
+            "type": "direct"
+          }
+        }
+      ],
+      "container": null,
+      "stop_reason": "tool_use",
+      "stop_sequence": null,
+      "stop_details": null,
+      "usage": {
+        "input_tokens": 4525,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 128,
+        "output_tokens_details": {
+          "thinking_tokens": 0
+        },
+        "service_tier": "standard",
+        "inference_geo": "global",
+        "speed": "standard"
+      },
+      "diagnostics": null
+    },
+    {
+      "model": "claude-sonnet-5-5",
+      "id": "msg_011CgnGqiGJfWfn58uta5Xvj",
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_01DPLVN2XX5M4ryW6Ch98BUw",
+          "name": "request_approval",
+          "input": {},
+          "caller": {
+            "type": "direct"
+          }
+        }
+      ],
+      "container": null,
+      "stop_reason": "tool_use",
+      "stop_sequence": null,
+      "stop_details": null,
+      "usage": {
+        "input_tokens": 4735,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 27,
+        "output_tokens_details": {
+          "thinking_tokens": 0
+        },
+        "service_tier": "standard",
+        "inference_geo": "global",
+        "speed": "standard"
+      },
+      "diagnostics": null
+    }
+  ]
+}

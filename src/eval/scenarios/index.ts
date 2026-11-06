@@ -5,9 +5,10 @@ import { conversationScenarios } from "./conversation.ts";
 import { limitScenarios } from "./limits.ts";
 import { memoryScenarios } from "./memory.ts";
 import { proactiveScenarios } from "./proactive.ts";
+import { recordedScenarios } from "./recorded.ts";
 import { recoveryScenarios } from "./recovery.ts";
 
 export const SCENARIOS: Scenario[] = [
   ...conversationScenarios, ...approvalScenarios, ...recoveryScenarios, ...adversarialScenarios,
-  ...memoryScenarios, ...limitScenarios, ...proactiveScenarios,
+  ...memoryScenarios, ...limitScenarios, ...proactiveScenarios, ...recordedScenarios,
 ];

@@ -11,10 +11,12 @@ export interface Recording {
 // response shapes. It does not prove the model would answer the same way today.
 export class RecordedLLM implements LLM {
   readonly requests: LlmRequest[] = [];
+  readonly modelName: string | undefined; // the model that really wrote these responses
   private responses: Anthropic.Message[];
 
   constructor(path: string) {
     this.responses = (JSON.parse(readFileSync(path, "utf8")) as Recording).responses;
+    this.modelName = this.responses[0]?.model;
   }
 
   remaining(): number {
