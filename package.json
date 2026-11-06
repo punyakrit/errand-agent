@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "eval": "tsx src/eval/run.ts",
     "demo": "tsx src/demo/server.ts",
-    "record": "tsx src/demo/record.ts"
+    "record": "tsx src/demo/record.ts",
+    "design:pdf": "tsx scripts/design-pdf.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.6.0",
