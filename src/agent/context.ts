@@ -47,6 +47,8 @@ function pickRecent(history: ChatMessage[], budgetTokens: number): ChatMessage[]
     recent.unshift(message);
     used += cost;
   }
+  // Leave room for the CONTINUING line, so the message cap stays true.
+  if (recent.length === CONTEXT.recentMessages && recent[0]?.role === "assistant") recent.shift();
   return recent;
 }
 
