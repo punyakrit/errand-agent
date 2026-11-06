@@ -22,6 +22,10 @@ describe("mergeRequest", () => {
     expect(mergeRequest(FULL, { area: undefined }).merged).toEqual(FULL);
   });
 
+  it("treats an empty string as not given", () => {
+    expect(mergeRequest(FULL, { date_from: "", notes: "" })).toEqual({ merged: FULL, changed: [] });
+  });
+
   it("lets the newest of a budget and no-limit win", () => {
     expect(mergeRequest(FULL, { any_budget: true }).merged.budget_inr).toBeUndefined();
     expect(mergeRequest({ any_budget: true }, { budget_inr: 900 }).merged).toEqual({ budget_inr: 900 });

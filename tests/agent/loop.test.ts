@@ -254,6 +254,15 @@ describe("request shape", () => {
     }
   });
 
+  it("lists kind before the request fields, because strict output follows schema order", async () => {
+    const { send, llm } = makeAgent([say("ok")]);
+    await send("hi");
+    const update = llm.requests[0]!.tools.find((definition) => definition.name === "update_request")!;
+    const order = Object.keys(update.input_schema.properties as object);
+    expect(order[0]).toBe("kind");
+    expect(order.indexOf("target_booking_id")).toBeLessThan(order.indexOf("service"));
+  });
+
   it("never offers the user ID or an idempotency key to the model", async () => {
     const { send, llm } = makeAgent([say("ok")]);
     await send("hi");

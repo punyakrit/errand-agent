@@ -49,3 +49,11 @@ Each entry was logged when it happened. The failing test was committed before th
 - **Effect:** a real user would be stuck in a loop. Scripted tests missed it because I wrote them assuming a tidy model that never searches twice.
 - **Fix:** each option now remembers the message it was first offered in, and a repeat search keeps that value. A provider that is new in this message still needs a pick.
 - **Regression test:** `a repeat search in the same message does not undo the user's pick` in `tests/agent/tools.test.ts`.
+
+## 7. Schema field order made the request fields unreachable
+
+- **What broke:** in a live smoke run, the model called `update_request` eight times with only `{"kind":"book","new_slot":""}` and hit the 8-turn limit before it could record anything.
+- **Why:** `strict: true` output follows the order of the schema's properties. `update_request` listed `kind` near the end, because it extended the request schema. Once the model wrote `kind`, only the fields after it could follow, so `service`, `area` and the rest could no longer be written.
+- **Effect:** a request with every detail in the first message burned all its turns and got a limit message. This cannot show up in scripted evals, because they never go through strict decoding.
+- **Fix:** `kind` and `target_booking_id` now come first. Empty strings also count as not given.
+- **Regression test:** `lists kind before the request fields, because strict output follows schema order` in `tests/agent/loop.test.ts`.
