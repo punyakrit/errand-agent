@@ -52,8 +52,10 @@ export async function dispatch(run: Run, block: Anthropic.ToolUseBlock): Promise
     }
     return resultBlock(block, result);
   } catch (error) {
-    run.toolCalls += 1;
-    run.trace.emit("tool_call", { name: block.name, args: parsed.data, error: String(error) });
+    if (!MOCK_TOOL_NAMES.includes(block.name)) {
+      run.toolCalls += 1;
+      run.trace.emit("tool_call", { name: block.name, args: parsed.data, error: String(error) });
+    }
     run.end = { reason: "tool_error" };
     return resultBlock(block, { error: "tool_failed" }, true);
   }
