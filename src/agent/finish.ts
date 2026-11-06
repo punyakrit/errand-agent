@@ -44,7 +44,7 @@ export function finish(run: Run, outcome: Outcome, options: { queue?: boolean } 
   if (LIMIT_REASONS.includes(outcome.reason)) {
     run.trace.emit("limit_hit", { limit: outcome.reason, turns: run.turns, tool_calls: run.toolCalls });
   }
-  run.deps.chat.add(run.sessionId, run.userId, "assistant", reply);
+  run.deps.chat.add(run.sessionId, run.userId, "assistant", outcome.historyText ?? reply);
   if (options.queue) run.deps.outbox.add(run.userId, reply);
   const task = run.activeTask();
   run.trace.emit("run_end", {

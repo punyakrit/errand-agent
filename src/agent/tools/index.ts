@@ -3,12 +3,14 @@ import type Anthropic from "@anthropic-ai/sdk";
 import type { Run } from "../run.ts";
 import { book, cancel, requestApproval, reschedule } from "./action-tools.ts";
 import type { AgentTool } from "./define.ts";
+import { memoryCorrect, memoryForget, memoryList, rememberPreference } from "./memory-tools.ts";
 import { getBookingStatus, getProvider, holdSlot, listBookings, searchProviders } from "./provider-tools.ts";
 import { askUser, updateRequest } from "./request-tools.ts";
 
 export const ALL_TOOLS: AgentTool[] = [
   updateRequest, askUser, searchProviders, getProvider, holdSlot, getBookingStatus, listBookings,
   requestApproval, book, cancel, reschedule,
+  rememberPreference, memoryList, memoryCorrect, memoryForget,
 ];
 
 // strict: true makes the API hold tool inputs to these schemas.

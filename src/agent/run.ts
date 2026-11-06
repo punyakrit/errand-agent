@@ -2,6 +2,7 @@ import type { DatabaseSync } from "node:sqlite";
 import type { Clock } from "../clock.ts";
 import type { Limits } from "../config.ts";
 import type { LLM } from "../llm/types.ts";
+import type { MemoryStore } from "../memory/store.ts";
 import type { MockTools } from "../mock/types.ts";
 import type { RunTrace } from "../trace/tracer.ts";
 import type { ApprovalCard, ApprovalStore } from "./approvals.ts";
@@ -19,6 +20,7 @@ export interface AgentDeps {
   approvals: ApprovalStore;
   ops: OpStore;
   outbox: Outbox;
+  memory: MemoryStore;
   checkpoint: (name: Checkpoint) => Promise<void>;
   mock: MockTools;
   llm: LLM;
@@ -33,6 +35,7 @@ export type Checkpoint = "approval_granted" | "op_started" | "book_returned";
 export interface Outcome {
   reason: FinishReason;
   text?: string; // omitted when finish() should use its fixed message
+  historyText?: string; // saved to chat instead of text, when text must not reach the model
   approval?: { approval_id: string; card: ApprovalCard };
 }
 

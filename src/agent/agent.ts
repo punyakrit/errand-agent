@@ -2,6 +2,7 @@ import type { DatabaseSync } from "node:sqlite";
 import type { Clock } from "../clock.ts";
 import { LIMITS, type Limits } from "../config.ts";
 import type { LLM } from "../llm/types.ts";
+import { MemoryStore } from "../memory/store.ts";
 import type { MockTools } from "../mock/types.ts";
 import type { TraceSink } from "../trace/tracer.ts";
 import { ApprovalStore } from "./approvals.ts";
@@ -9,6 +10,7 @@ import { ChatStore } from "./chat.ts";
 import { UNCONFIRMED_MESSAGE } from "./executor.ts";
 import { finish, type AgentReply } from "./finish.ts";
 import { handleApprovalReply, handleApproveClick } from "./gate.ts";
+import { handleMemoryCommand } from "./memory-command.ts";
 import { runModelLoop } from "./loop.ts";
 import { OpStore } from "./ops.ts";
 import { Outbox } from "./outbox.ts";
@@ -38,6 +40,7 @@ export class Agent {
       approvals: new ApprovalStore(options.db, options.clock),
       ops: new OpStore(options.db, options.clock),
       outbox: new Outbox(options.db, options.clock),
+      memory: new MemoryStore(options.db, options.clock),
       checkpoint: options.checkpoint ?? (async () => {}),
     };
   }
@@ -47,7 +50,7 @@ export class Agent {
     const run = new Run(this.deps, sessionId, userId, messageId, this.sink.startRun(sessionId, "user_message"));
     try {
       await this.settleOpenOps(run);
-      const outcome = (await handleApprovalReply(run, text)) ?? (await runModelLoop(run));
+      const outcome = handleMemoryCommand(run, text) ?? (await handleApprovalReply(run, text)) ?? (await runModelLoop(run));
       return finish(run, outcome);
     } catch (error) {
       run.trace.emit("tool_call", { name: "agent", error: String(error) });

@@ -32,7 +32,10 @@ export const RECOVERY = {
 export const CONTEXT = {
   budgetTokens: 3_000, // everything sent except the tool schemas
   loopReserveTokens: 1_200, // kept free for tool results inside one tool loop
-  recentMessages: 8,
+  memoryTokens: 300,
+  summaryTokens: 150,
+  recentMessages: 12,
+  maxMessageChars: 1_200,
 };
 
 export const UNTRUSTED = {

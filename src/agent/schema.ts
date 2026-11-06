@@ -39,6 +39,19 @@ export function createAgentSchema(db: DatabaseSync): void {
       result TEXT,
       created_at INTEGER NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS memories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      key TEXT NOT NULL,
+      value TEXT NOT NULL,
+      scope TEXT NOT NULL, -- global, or a service such as plumber
+      kind TEXT NOT NULL, -- explicit, inferred
+      confirmed INTEGER NOT NULL,
+      status TEXT NOT NULL, -- active, superseded, forgotten
+      source TEXT NOT NULL, -- the user's words, or booking:<id>
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
     -- Messages for a user who is not connected right now.
     CREATE TABLE IF NOT EXISTS outbox (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

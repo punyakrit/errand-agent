@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { BookingView } from "../../mock/types.ts";
+import { applyMemoryDefaults } from "../../memory/defaults.ts";
 import { voidOpenApprovals } from "../offers.ts";
 import { ASK_FIELDS, fieldValue, findInvalidField, mergeRequest, missingFields, RequestUpdate } from "../request.ts";
 import type { Run } from "../run.ts";
@@ -78,7 +79,8 @@ export const updateRequest = defineTool({
     task ??= run.deps.tasks.create(run.sessionId, run.userId, (kind ?? "book") as TaskKind);
 
     const { merged, changed } = mergeRequest(task.request, update);
-    task.request = merged;
+    const { request, filled } = applyMemoryDefaults(merged, run.deps.memory.usable(run.userId));
+    task.request = request;
     run.deps.tasks.save(task);
 
     const hadSearch = task.details.options !== undefined || task.details.hold !== undefined;
@@ -110,6 +112,7 @@ export const updateRequest = defineTool({
       kind: task.kind,
       state: task.state,
       request: task.request,
+      filled_from_memory: filled,
       target_booking: task.details.target_booking,
       new_slot: task.details.new_slot,
       missing: missingFields(task.kind, task.request, task.details.target_booking !== undefined),

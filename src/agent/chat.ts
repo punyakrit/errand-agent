@@ -25,6 +25,14 @@ export class ChatStore {
     return Number(result.lastInsertRowid);
   }
 
+  // Rewrites stored messages in place. Used to remove forgotten facts.
+  rewrite(userId: string, change: (text: string) => string): void {
+    for (const message of this.history(userId)) {
+      const updated = change(message.text);
+      if (updated !== message.text) this.db.prepare("UPDATE messages SET text = ? WHERE id = ?").run(updated, message.id);
+    }
+  }
+
   // All of a user's messages across sessions, oldest first.
   history(userId: string): ChatMessage[] {
     return this.db.prepare("SELECT * FROM messages WHERE user_id = ? ORDER BY id").all(userId) as unknown as ChatMessage[];

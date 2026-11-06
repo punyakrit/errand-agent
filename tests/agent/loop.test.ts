@@ -95,10 +95,19 @@ describe("hard limits", () => {
   });
 
   it("stops at 20 tool calls, even inside one batch", async () => {
-    const batch = Array.from({ length: 12 }, () => ({ name: "list_bookings", input: {} }));
+    // A tool with a tiny result, so this exercises the call limit, not the context budget.
+    const batch = Array.from({ length: 12 }, () => ({ name: "get_booking_status", input: { hold_id: "H-9999" } }));
     const { send, events } = makeAgent([call(...batch), call(...batch), call(...batch)]);
     expectCleanExit(await send("hi"), "tool_limit");
     expect(events("tool_call")).toHaveLength(20);
+  });
+
+  it("stops cleanly when tool results outgrow the context budget", async () => {
+    const batch = Array.from({ length: 12 }, () => ({ name: "list_bookings", input: {} }));
+    const { send, llm, events } = makeAgent([call(...batch), say("never sent")]);
+    expectCleanExit(await send("hi"), "context_budget");
+    expect(llm.requests).toHaveLength(1); // the oversized payload never reached the model
+    expect(events("limit_hit")[0]).toMatchObject({ limit: "context_budget" });
   });
 
   it("stops at 60 seconds on the injected clock", async () => {

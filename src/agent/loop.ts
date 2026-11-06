@@ -5,7 +5,7 @@ import { estimateCostUsd } from "../llm/cost.ts";
 import { buildContext, type BuiltContext } from "./context.ts";
 import { CLAIM_BLOCKED_REPLY, claimsOutcome } from "./reply-guard.ts";
 import type { Outcome, Run } from "./run.ts";
-import { estimatePayloadTokens, estimateTokens } from "./tokens.ts";
+import { estimatePayloadTokens } from "./tokens.ts";
 import { dispatch, toolDefinitions } from "./tools/index.ts";
 
 class ModelTimeout extends Error {}
@@ -33,7 +33,7 @@ function writeManifest(run: Run, context: BuiltContext, messages: Anthropic.Mess
     turn: run.turns + 1,
     memory_included: context.memoryIncluded,
     memory_excluded: context.memoryExcluded,
-    tokens: { system: estimateTokens(context.system), estimated_total: estimated, budget: CONTEXT.budgetTokens },
+    tokens: { ...context.tokens, estimated_total: estimated, budget: CONTEXT.budgetTokens },
     payload_sha256: createHash("sha256").update(payload).digest("hex"),
   });
 }
