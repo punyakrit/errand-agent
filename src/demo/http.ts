@@ -25,6 +25,7 @@ async function readJson(request: IncomingMessage): Promise<Record<string, unknow
 
 function openEventStream(app: DemoApp, request: IncomingMessage, response: ServerResponse): void {
   response.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache", connection: "keep-alive" });
+  response.write(": connected\n\n"); // sends the headers now, so the page knows it is connected
   const write = (event: DemoEvent) => response.write(`data: ${JSON.stringify(event)}\n\n`);
   const stop = app.onEvent(write);
   app.deliverQueued();
