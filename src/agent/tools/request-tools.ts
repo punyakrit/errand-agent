@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { BookingView } from "../../mock/types.ts";
+import { voidOpenApprovals } from "../offers.ts";
 import { ASK_FIELDS, fieldValue, findInvalidField, mergeRequest, missingFields, RequestUpdate } from "../request.ts";
 import type { Run } from "../run.ts";
 import type { Task, TaskKind } from "../tasks.ts";
@@ -21,6 +22,7 @@ function withinBudget(task: Task): boolean {
 
 // Old options, holds and approvals were for the old request, so they are dropped.
 function resetSearch(run: Run, task: Task, changed: string[]): void {
+  voidOpenApprovals(run, task, "request_changed");
   delete task.details.options;
   delete task.details.options_message_id;
   delete task.details.hold;
@@ -69,6 +71,7 @@ export const updateRequest = defineTool({
 
     let task = run.activeTask();
     if (task && kind && task.kind !== kind) {
+      voidOpenApprovals(run, task, "task_replaced");
       run.setState(task, "FAILED", { because: "replaced_by_new_request" });
       task = undefined;
     }
@@ -96,8 +99,10 @@ export const updateRequest = defineTool({
       const offered = task.details.options?.some((option) => option.slots.includes(newSlot));
       if (!offered) return { error: "not_an_offered_option" };
       if (task.details.options_message_id === run.messageId) return { error: "user_must_pick" };
+      if (task.details.new_slot !== newSlot) voidOpenApprovals(run, task, "new_slot_changed");
       task.details.new_slot = newSlot;
       run.deps.tasks.save(task);
+      if (task.state === "AWAITING_APPROVAL") run.setState(task, "COMPARING", { because: "new_slot_changed" });
     }
 
     return {

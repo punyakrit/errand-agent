@@ -3,6 +3,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { CONTEXT, MODEL } from "../config.ts";
 import { estimateCostUsd } from "../llm/cost.ts";
 import { buildContext, type BuiltContext } from "./context.ts";
+import { CLAIM_BLOCKED_REPLY, claimsOutcome } from "./reply-guard.ts";
 import type { Outcome, Run } from "./run.ts";
 import { estimatePayloadTokens, estimateTokens } from "./tokens.ts";
 import { dispatch, toolDefinitions } from "./tools/index.ts";
@@ -88,7 +89,12 @@ export async function runModelLoop(run: Run): Promise<Outcome> {
         return { reason: "max_tokens" };
       case "end_turn": {
         const text = replyText(response);
-        return text ? { reason: "reply", text } : { reason: "malformed_output" };
+        if (!text) return { reason: "malformed_output" };
+        if (claimsOutcome(text)) {
+          run.trace.emit("gate_decision", { decision: "unverified_claim_blocked", text });
+          return { reason: "reply", text: CLAIM_BLOCKED_REPLY };
+        }
+        return { reason: "reply", text };
       }
       case "tool_use":
         break;

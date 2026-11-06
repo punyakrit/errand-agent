@@ -14,6 +14,39 @@ export function createAgentSchema(db: DatabaseSync): void {
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS approvals (
+      approval_id TEXT PRIMARY KEY,
+      task_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      action TEXT NOT NULL,
+      card TEXT NOT NULL,
+      fingerprint TEXT NOT NULL,
+      status TEXT NOT NULL, -- pending, granted, consumed, void
+      void_reason TEXT,
+      created_at INTEGER NOT NULL
+    );
+    -- Written before a side effect runs, so a crash can always be recovered.
+    CREATE TABLE IF NOT EXISTS pending_ops (
+      op_id TEXT PRIMARY KEY,
+      approval_id TEXT NOT NULL UNIQUE,
+      task_id TEXT NOT NULL,
+      session_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      action TEXT NOT NULL,
+      idempotency_key TEXT NOT NULL,
+      args TEXT NOT NULL,
+      state TEXT NOT NULL, -- started, completed, failed
+      result TEXT,
+      created_at INTEGER NOT NULL
+    );
+    -- Messages for a user who is not connected right now.
+    CREATE TABLE IF NOT EXISTS outbox (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      text TEXT NOT NULL,
+      delivered INTEGER NOT NULL DEFAULT 0,
+      at INTEGER NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS messages (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       session_id TEXT NOT NULL,

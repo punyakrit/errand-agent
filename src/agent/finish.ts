@@ -33,20 +33,24 @@ export interface AgentReply {
   reply: string;
   taskId?: string;
   taskState?: string;
+  approval?: Outcome["approval"];
+  notices: string[]; // messages queued while the user was away
 }
 
 // Every exit from a run passes through here. It saves the reply, closes the
 // trace and returns one message for the user.
-export function finish(run: Run, outcome: Outcome): AgentReply {
+export function finish(run: Run, outcome: Outcome, options: { queue?: boolean } = {}): AgentReply {
   const reply = outcome.text ?? FIXED_MESSAGES[outcome.reason] ?? FIXED_MESSAGES.internal_error!;
   if (LIMIT_REASONS.includes(outcome.reason)) {
     run.trace.emit("limit_hit", { limit: outcome.reason, turns: run.turns, tool_calls: run.toolCalls });
   }
   run.deps.chat.add(run.sessionId, run.userId, "assistant", reply);
+  if (options.queue) run.deps.outbox.add(run.userId, reply);
   const task = run.activeTask();
   run.trace.emit("run_end", {
     reason: outcome.reason, reply, turns: run.turns, tool_calls: run.toolCalls,
     task_id: task?.task_id, task_state: task?.state,
   });
-  return { reason: outcome.reason, reply, taskId: task?.task_id, taskState: task?.state };
+  const notices = options.queue ? [] : run.deps.outbox.drain(run.userId);
+  return { reason: outcome.reason, reply, taskId: task?.task_id, taskState: task?.state, approval: outcome.approval, notices };
 }

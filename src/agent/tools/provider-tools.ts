@@ -1,7 +1,9 @@
 import { z } from "zod";
-import { buildOptions, optionsForModel, type Option } from "../options.ts";
+import { voidOpenApprovals } from "../offers.ts";
+import { optionsForModel } from "../options.ts";
 import { missingFields } from "../request.ts";
 import type { Run } from "../run.ts";
+import { searchForTask } from "../search.ts";
 import type { Task } from "../tasks.ts";
 import { DATA_NOTE, looksSuspicious, markUntrusted } from "../untrusted.ts";
 import { UNTRUSTED } from "../../config.ts";
@@ -11,12 +13,6 @@ function requestMatches(task: Task, input: { service: string; area: string; date
   const request = task.request;
   return request.service === input.service && request.area === input.area
     && request.date_from === input.date_range.from && request.date_to === input.date_range.to;
-}
-
-function storeOptions(run: Run, task: Task, options: Option[]): void {
-  task.details.options = options;
-  task.details.options_message_id = run.messageId;
-  run.deps.tasks.save(task);
 }
 
 export const searchProviders = defineTool({
@@ -34,45 +30,23 @@ export const searchProviders = defineTool({
     if (missing.length > 0) return { error: "missing_fields", missing };
     if (!requestMatches(task, input)) return { error: "request_mismatch", next: "Call update_request first.", request: task.request };
 
-    run.setState(task, "SEARCHING");
-    const result = await run.callMock("search_providers", input);
-    if (!result.ok) {
-      run.setState(task, "COLLECTING", { because: result.error });
-      return { error: result.error };
+    const found = await searchForTask(run, task);
+    switch (found.kind) {
+      case "options":
+        return { options: optionsForModel(found.options), removed: found.removed };
+      case "requested_provider_no_fit":
+        return {
+          requested_provider_has_no_fit: true,
+          requested_provider: found.name,
+          its_other_slots: found.otherSlots,
+          other_providers: optionsForModel(found.others),
+          next: "Tell the user this provider has nothing that fits, and let them choose. Do not switch provider yourself.",
+        };
+      case "nothing_fits":
+        return { options: [], removed: found.removed, next: "Nothing fits. Tell the user why and ask what they want to change." };
+      default:
+        return { error: found.error };
     }
-
-    const pinnedId = task.request.provider_id;
-    const { options, removed } = buildOptions(result.providers, task.request);
-
-    if (pinnedId) {
-      const pinned = options.filter((option) => option.provider_id === pinnedId);
-      if (pinned.length > 0) {
-        storeOptions(run, task, pinned);
-        run.setState(task, "COMPARING");
-        return { options: optionsForModel(pinned) };
-      }
-      // The asked-for provider has nothing that fits. Say so, and do not switch.
-      const asked = result.providers.find((provider) => provider.provider_id === pinnedId);
-      storeOptions(run, task, []);
-      run.setState(task, "COMPARING");
-      run.setState(task, "NEEDS_USER", { because: "requested_provider_has_no_fit" });
-      return {
-        requested_provider_has_no_fit: true,
-        requested_provider: asked?.name ?? pinnedId,
-        its_other_slots: asked?.available_slots.slice(0, 4) ?? [],
-        other_providers: optionsForModel(options.filter((option) => option.provider_id !== pinnedId)),
-        next: "Tell the user this provider has nothing that fits, and let them choose. Do not switch provider yourself.",
-      };
-    }
-
-    storeOptions(run, task, options);
-    if (options.length === 0) {
-      run.setState(task, "COMPARING");
-      run.setState(task, "NEEDS_USER", { because: "no_options_fit" });
-      return { options: [], removed, next: "Nothing fits. Tell the user why and ask what they want to change." };
-    }
-    run.setState(task, "COMPARING");
-    return { options: optionsForModel(options), removed };
   },
 });
 
@@ -128,6 +102,7 @@ export const holdSlot = defineTool({
     const result = await run.callMock("hold_slot", input);
     if (!result.ok) return { error: result.error, next: "Offer another option." };
 
+    voidOpenApprovals(run, task, "new_hold");
     const option = task.details.options!.find((item) => item.provider_id === input.provider_id)!;
     task.details.hold = {
       hold_id: result.hold_id, provider_id: result.provider_id, provider_name: option.name,

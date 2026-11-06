@@ -4,8 +4,11 @@ import type { Limits } from "../config.ts";
 import type { LLM } from "../llm/types.ts";
 import type { MockTools } from "../mock/types.ts";
 import type { RunTrace } from "../trace/tracer.ts";
+import type { ApprovalCard, ApprovalStore } from "./approvals.ts";
 import type { ChatStore } from "./chat.ts";
 import type { FinishReason } from "./finish.ts";
+import type { OpStore } from "./ops.ts";
+import type { Outbox } from "./outbox.ts";
 import { canMove, IllegalTransition, type State } from "./state.ts";
 import type { Task, TaskStore } from "./tasks.ts";
 
@@ -13,15 +16,24 @@ export interface AgentDeps {
   db: DatabaseSync;
   tasks: TaskStore;
   chat: ChatStore;
+  approvals: ApprovalStore;
+  ops: OpStore;
+  outbox: Outbox;
+  checkpoint: (name: Checkpoint) => Promise<void>;
   mock: MockTools;
   llm: LLM;
   clock: Clock;
   limits: Limits;
 }
 
+// Named points in an action. Production ignores them. Tests use them to crash
+// the process, or to change something at an exact moment.
+export type Checkpoint = "approval_granted" | "op_started" | "book_returned";
+
 export interface Outcome {
   reason: FinishReason;
   text?: string; // omitted when finish() should use its fixed message
+  approval?: { approval_id: string; card: ApprovalCard };
 }
 
 const READ_ONLY = new Set<keyof MockTools>(["search_providers", "get_provider", "get_booking_status", "list_bookings"]);

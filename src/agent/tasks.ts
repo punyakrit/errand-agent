@@ -27,6 +27,7 @@ export interface TaskDetails {
   target_booking?: BookingView;
   matching_bookings?: BookingView[];
   new_slot?: string;
+  conflict_slots?: string[]; // slots a reschedule was refused on
   cancelled_booking_id?: string; // for rebook: the booking the provider cancelled
   result?: { booking_id: string; provider_name: string; slot: string; price: number; verified_status: string };
 }
