@@ -218,8 +218,9 @@ describe("approvals are single use", () => {
   it("two clicks at the same moment make one booking", async () => {
     const { agent, card, mock } = await atApproval({}, (made) => made.mock.configure({ forceBook: ["success", "success"] }));
     const id = card.approval!.approval_id;
-    await Promise.all([agent.approve(SESSION, USER, id), agent.approve(SESSION, USER, id)]);
+    const replies = await Promise.all([agent.approve(SESSION, USER, id), agent.approve(SESSION, USER, id)]);
     expect(mock.calls("book")).toHaveLength(1);
+    expect(replies.map((reply) => reply.reason)).toEqual(["action_result", "action_result"]);
   });
 
   it("a yes with nothing to approve goes to the model", async () => {
