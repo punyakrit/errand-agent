@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Errand Agent</title>
+<style>
+  :root {
+    --bg: #101214; --panel: #181b1f; --line: #2a2f36; --text: #e8eaed; --dim: #9aa3ad;
+    --accent: #f59e0b; --good: #34d399; --bad: #f87171; --info: #60a5fa; --gate: #c084fc;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; height: 100vh; display: flex; flex-direction: column; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, sans-serif; }
+  header { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+  header h1 { font-size: 16px; margin: 0; flex: 1; }
+  button { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; font: inherit; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  main { flex: 1; display: grid; grid-template-columns: 1fr 1fr; min-height: 0; }
+  section { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+  #chat-col { border-right: 1px solid var(--line); }
+  h2 { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--dim); margin: 0; padding: 10px 16px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; }
+  #chat, #trace { flex: 1; overflow-y: auto; padding: 12px 16px; }
+  .msg { max-width: 85%; padding: 8px 12px; margin-bottom: 10px; border-radius: 10px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .user { margin-left: auto; background: #1e3a5f; }
+  .assistant { background: var(--panel); border: 1px solid var(--line); }
+  .card { border-color: var(--accent); }
+  .card button { display: block; margin-top: 10px; background: var(--accent); color: #111; border: 0; font-weight: 600; }
+  .card button:disabled { opacity: .5; cursor: default; }
+  form { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--line); }
+  input { flex: 1; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font: inherit; }
+  #dev { padding: 10px 16px; border-top: 1px solid var(--line); font-size: 13px; color: var(--dim); }
+  #dev button { margin: 0 6px 6px 0; font-size: 13px; }
+  #dev-note { white-space: pre-wrap; overflow-wrap: anywhere; }
+  .row { font: 12px/1.5 ui-monospace, Menlo, monospace; padding: 2px 0; cursor: pointer; overflow-wrap: anywhere; }
+  .row b { font-weight: 600; }
+  .row pre { margin: 4px 0 8px; padding: 8px; background: var(--panel); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; cursor: text; }
+  .state { color: var(--info); } .model { color: var(--dim); } .tool { color: var(--text); }
+  .gate { color: var(--gate); } .ok { color: var(--good); } .warn { color: var(--bad); } .run { color: var(--accent); }
+  @media (max-width: 720px) { main { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; } #chat-col { border-right: 0; border-bottom: 1px solid var(--line); } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Errand Agent</h1>
+  <button id="reset">Reset</button>
+</header>
+<main>
+  <section id="chat-col">
+    <h2>Chat</h2>
+    <div id="chat"></div>
+    <form id="form"><input id="input" placeholder="Find a plumber for my kitchen tap this week, mornings only, under ₹1,500" autocomplete="off"><button>Send</button></form>
+    <div id="dev">
+      <button id="force">Force next book: timeout that really booked</button>
+      <button id="inject">Show the provider with the injected review</button>
+      <div id="dev-note"></div>
+    </div>
+  </section>
+  <section>
+    <h2><span>Trace</span><span id="totals"></span></h2>
+    <div id="trace"></div>
+  </section>
+</main>
+<script>
+const chat = document.getElementById("chat");
+const trace = document.getElementById("trace");
+const totals = document.getElementById("totals");
+const input = document.getElementById("input");
+const note = document.getElementById("dev-note");
+let spend = { tokens: 0, cost: 0 };
+
+const post = (path, body) => fetch(path, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body ?? {}) });
+
+function addMessage(event) {
+  const box = document.createElement("div");
+  box.className = `msg ${event.role}${event.approval ? " card" : ""}`;
+  box.textContent = event.text;
+  if (event.approval) {
+    const approve = document.createElement("button");
+    approve.textContent = "Approve";
+    approve.onclick = () => {
+      approve.disabled = true;
+      post("/approve", { approval_id: event.approval.approval_id });
+    };
+    box.append(approve);
+  }
+  chat.append(box);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+// One short line per trace event. Clicking a line shows the raw event.
+function summarise(event) {
+  switch (event.type) {
+    case "run_start": return ["run", `▶ run: ${event.kind}`];
+    case "run_end": return ["run", `■ end: ${event.reason}`];
+    case "state_transition": return [event.illegal ? "warn" : "state", `${event.from} → ${event.to}${event.because ? ` (${event.because})` : ""}`];
+    case "context_manifest": return ["model", `context: ${event.tokens.estimated_total} of ${event.tokens.budget} est. tokens, ${event.memory_included.length} memories in, ${event.memory_excluded.length} out`];
+    case "model_call": return ["model", event.error ? `model error: ${event.error}` : `model: ${event.latency_ms} ms, ${event.input_tokens} in, ${event.output_tokens} out, $${event.estimated_cost_usd.toFixed(4)}, ${event.stop_reason}`];
+    case "tool_call": {
+      const result = event.result ?? {};
+      const failed = event.error || result.error;
+      const label = failed ? `✗ ${event.error ?? result.error}` : result.status ?? "ok";
+      return [failed ? "warn" : "tool", `${event.name}${event.attempt > 1 ? ` (attempt ${event.attempt})` : ""} → ${label}`];
+    }
+    case "gate_decision": return ["gate", `gate: ${event.decision}${event.action ? ` ${event.action}` : ""}${event.because ? ` (${event.because})` : ""}`];
+    case "approval_created": return ["gate", `approval created: ₹${event.card.price}`];
+    case "approval_granted": return ["ok", `approval granted by ${event.via}`];
+    case "approval_consumed": return ["ok", "approval consumed, op written"];
+    case "approval_voided": return ["warn", `approval void: ${event.reason}`];
+    case "limit_hit": return ["warn", `limit hit: ${event.limit}`];
+    case "proactive_event": return ["run", `proactive: ${event.event} → ${event.decision}`];
+    default: return ["tool", event.type];
+  }
+}
+
+function addTrace(event) {
+  if (event.type === "model_call" && event.input_tokens) {
+    spend.tokens += event.input_tokens + event.output_tokens;
+    spend.cost += event.estimated_cost_usd;
+    totals.textContent = `${spend.tokens.toLocaleString()} tokens · $${spend.cost.toFixed(4)}`;
+  }
+  const [style, text] = summarise(event);
+  const row = document.createElement("div");
+  row.className = `row ${style}`;
+  row.textContent = text;
+  row.onclick = (click) => {
+    if (click.target.tagName === "PRE") return;
+    const open = row.querySelector("pre");
+    if (open) return open.remove();
+    const raw = document.createElement("pre");
+    raw.textContent = JSON.stringify(event, null, 2);
+    row.append(raw);
+  };
+  trace.append(row);
+  trace.scrollTop = trace.scrollHeight;
+}
+
+new EventSource("/events").onmessage = (message) => {
+  const event = JSON.parse(message.data);
+  if (event.kind === "chat") addMessage(event);
+  if (event.kind === "trace") addTrace(event.event);
+  if (event.kind === "reset") {
+    chat.textContent = ""; trace.textContent = ""; note.textContent = ""; totals.textContent = "";
+    spend = { tokens: 0, cost: 0 };
+  }
+};
+
+document.getElementById("form").onsubmit = (submit) => {
+  submit.preventDefault();
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = "";
+  post("/message", { text });
+};
+document.getElementById("reset").onclick = () => post("/reset");
+document.getElementById("force").onclick = async () => {
+  await post("/dev/force-timeout");
+  note.textContent = "The next book will time out, but the booking will really exist.";
+};
+document.getElementById("inject").onclick = async () => {
+  const provider = await (await fetch("/dev/injected-provider")).json();
+  note.textContent = `${provider.name} has this review:\n"${provider.review}"`;
+  input.value = provider.prompt;
+  input.focus();
+};
+</script>
+</body>
+</html>

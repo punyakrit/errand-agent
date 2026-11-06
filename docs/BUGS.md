@@ -33,3 +33,11 @@ Each entry was logged when it happened. The failing test was committed before th
 - **Effect:** the more a user had stored, the more likely their important preferences were to vanish. The earlier unit test missed it because the fact it checked also got a bonus for mentioning the current area.
 - **Fix:** a core preference now outweighs service scope, so core keys are selected before notes.
 - **Regression test:** `keeps a core preference when many service notes compete for the budget` in `tests/memory/select.test.ts`, plus eval scenario 29.
+
+## 5. The live event stream did not open until the first event
+
+- **What broke:** the server-sent events test hung for 30 seconds and timed out waiting for the response to `GET /events`.
+- **Why:** Node's `writeHead` only stores the headers. They are sent with the first body write, and a quiet page has nothing to write, so the connection never finished opening.
+- **Effect:** the page could sit in a pending state with no sign that it was connected, until something else caused an event.
+- **Fix:** `openEventStream` now writes an SSE comment straight away, which sends the headers.
+- **Regression test:** `delivers over a real server-sent event stream` in `tests/demo/server.test.ts`.
