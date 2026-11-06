@@ -239,6 +239,21 @@ describe("request shape", () => {
     }
   });
 
+  it("sends only schema features strict tools support", async () => {
+    const { send, llm } = makeAgent([say("ok")]);
+    await send("hi");
+    const tools = llm.requests[0]!.tools;
+    expect(tools.length).toBeLessThanOrEqual(20);
+    for (const definition of tools) {
+      expect(definition.input_schema, definition.name).not.toHaveProperty("$schema");
+      expect(Array.isArray(definition.input_schema.required), definition.name).toBe(true);
+    }
+    const text = JSON.stringify(tools);
+    for (const unsupported of ["minLength", "maxLength", "minimum", "maximum", "pattern", "multipleOf"]) {
+      expect(text, unsupported).not.toContain(`"${unsupported}"`);
+    }
+  });
+
   it("never offers the user ID or an idempotency key to the model", async () => {
     const { send, llm } = makeAgent([say("ok")]);
     await send("hi");

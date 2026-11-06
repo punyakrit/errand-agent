@@ -13,13 +13,20 @@ export const ALL_TOOLS: AgentTool[] = [
   rememberPreference, memoryList, memoryCorrect, memoryForget,
 ];
 
+// zod adds a $schema key the API does not need, and omits `required` when
+// nothing is required. Strict tools expect the key to be there.
+function strictSchema(tool: AgentTool): Anthropic.Tool.InputSchema {
+  const { $schema: _unused, ...schema } = z.toJSONSchema(tool.input) as Anthropic.Tool.InputSchema & { $schema?: string };
+  return { ...schema, required: schema.required ?? [] };
+}
+
 // strict: true makes the API hold tool inputs to these schemas.
 export function toolDefinitions(): Anthropic.Tool[] {
   return ALL_TOOLS.map((tool) => ({
     name: tool.name,
     description: tool.description,
     strict: true,
-    input_schema: z.toJSONSchema(tool.input) as Anthropic.Tool.InputSchema,
+    input_schema: strictSchema(tool),
   }));
 }
 
