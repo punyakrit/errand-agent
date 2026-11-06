@@ -7,9 +7,12 @@ import type { Run } from "../run.ts";
 import type { Task, TaskKind } from "../tasks.ts";
 import { defineTool } from "./define.ts";
 
-const UpdateInput = RequestUpdate.extend({
+// Order matters. Strict output follows this order, so a field listed before the
+// one the model writes first can no longer be written. kind must come first.
+const UpdateInput = z.object({
   kind: z.enum(["book", "reschedule", "cancel"]).optional().describe("Omit to keep the current task"),
   target_booking_id: z.string().optional().describe("The booking to move or cancel"),
+  ...RequestUpdate.shape,
   new_slot: z.string().optional().describe("For a move: the slot the user chose"),
 }).strict();
 

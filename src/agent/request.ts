@@ -46,7 +46,7 @@ export function mergeRequest(current: RequestFields, update: RequestUpdate): { m
   const merged: Record<string, unknown> = { ...current };
   const changed: string[] = [];
   for (const [key, value] of Object.entries(fields)) {
-    if (value === undefined) continue;
+    if (value === undefined || value === "") continue;
     if (JSON.stringify(merged[key]) !== JSON.stringify(value)) changed.push(key);
     merged[key] = value;
   }
