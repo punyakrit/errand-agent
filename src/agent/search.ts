@@ -8,9 +8,14 @@ export type SearchOutcome =
   | { kind: "nothing_fits"; removed: Record<string, number> }
   | { kind: "error"; error: string };
 
+// Each option keeps the message it was first offered in. A repeat search must
+// not make something the user has already seen look new.
 function saveOptions(run: Run, task: Task, options: Option[]): void {
-  task.details.options = options;
-  task.details.options_message_id = run.messageId;
+  const earlier = task.details.options ?? [];
+  task.details.options = options.map((option) => {
+    const seen = earlier.find((item) => item.provider_id === option.provider_id);
+    return { ...option, offered_in_message: seen?.offered_in_message ?? run.messageId };
+  });
   run.deps.tasks.save(task);
 }
 

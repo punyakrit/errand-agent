@@ -25,7 +25,6 @@ function withinBudget(task: Task): boolean {
 function resetSearch(run: Run, task: Task, changed: string[]): void {
   voidOpenApprovals(run, task, "request_changed");
   delete task.details.options;
-  delete task.details.options_message_id;
   delete task.details.hold;
   delete task.details.new_slot;
   run.setState(task, "COLLECTING", { because: "request_changed", changed });
@@ -99,9 +98,9 @@ export const updateRequest = defineTool({
 
     if (newSlot) {
       if (task.kind !== "reschedule") return { error: "new_slot_is_for_reschedule_only" };
-      const offered = task.details.options?.some((option) => option.slots.includes(newSlot));
+      const offered = task.details.options?.find((option) => option.slots.includes(newSlot));
       if (!offered) return { error: "not_an_offered_option" };
-      if (task.details.options_message_id === run.messageId) return { error: "user_must_pick" };
+      if (offered.offered_in_message === run.messageId) return { error: "user_must_pick" };
       if (task.details.new_slot !== newSlot) voidOpenApprovals(run, task, "new_slot_changed");
       task.details.new_slot = newSlot;
       run.deps.tasks.save(task);

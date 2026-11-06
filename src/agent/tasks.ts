@@ -22,7 +22,6 @@ export interface HoldRecord {
 // Everything code has learned while working on a task.
 export interface TaskDetails {
   options?: Option[];
-  options_message_id?: number; // the user message the options were found in
   hold?: HoldRecord;
   target_booking?: BookingView;
   matching_bookings?: BookingView[];

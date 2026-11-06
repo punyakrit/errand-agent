@@ -81,8 +81,9 @@ function pickProblem(run: Run, task: Task, providerId: string, slot: string): st
   const options = task.details.options;
   if (options === undefined) return "search_first";
   if (task.request.provider_id && task.request.provider_id !== providerId) return "provider_not_selected_by_user";
-  if (!options.some((option) => option.provider_id === providerId && option.slots.includes(slot))) return "not_an_offered_option";
-  if (task.details.options_message_id === run.messageId) return "user_must_pick";
+  const option = options.find((item) => item.provider_id === providerId && item.slots.includes(slot));
+  if (!option) return "not_an_offered_option";
+  if (option.offered_in_message === run.messageId) return "user_must_pick";
   return undefined;
 }
 

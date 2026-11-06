@@ -8,6 +8,7 @@ export interface Option {
   price: number;
   rating: number;
   slots: string[]; // every slot that fits, not just the ones shown to the model
+  offered_in_message?: number; // the user message this option was first found in
 }
 
 function slotFitsTime(slot: string, request: RequestFields): boolean {
@@ -43,8 +44,8 @@ export function buildOptions(providers: ProviderSummary[], request: RequestField
 }
 
 // A short view for the model: a few slots, spread across different days.
-export function optionsForModel(options: Option[]): (Omit<Option, "slots"> & { slots: string[]; more_slots: number })[] {
-  return options.map((option) => {
+export function optionsForModel(options: Option[]): (Omit<Option, "slots" | "offered_in_message"> & { slots: string[]; more_slots: number })[] {
+  return options.map(({ offered_in_message: _bookkeeping, ...option }) => {
     const seenDays = new Set<string>();
     const spread = option.slots.filter((slot) => {
       const day = slot.slice(0, 10);
