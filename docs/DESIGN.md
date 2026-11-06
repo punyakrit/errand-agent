@@ -25,14 +25,15 @@ One JSONL file per run: state transitions, model calls with latency, tokens and 
 - **One extra turn.** Search, pick, hold, then approve costs a turn, but approval always covers the real held price.
 
 ## Annotated trace: timeout after success
+From `docs/traces/timeout-after-success.jsonl`, a real `claude-sonnet-5-5` run. After 5 model calls, 21,481 input tokens and about $0.05, the user says "yes", and code takes over with no further model call:
 ```
-PENDING: replaced with an excerpt from the real claude-sonnet-5-5 run in docs/traces/timeout-after-success.jsonl
-approval_granted  via=chat                        <- code read the raw "yes"
-approval_consumed op written before any tool      <- crash-safe from here
-AWAITING_APPROVAL -> EXECUTING
-tool_call book attempt=1 -> error timeout         <- the booking really happened, the response was lost
-EXECUTING -> VERIFYING (book_timeout)             <- never guess
-tool_call get_booking_status -> booked B-0003     <- source of truth, so no retry
-gate_decision verified                            <- only now may we say booked
-VERIFYING -> DONE, run_end action_result
+approval_granted   via=chat fingerprint=55bc9a28...          <- code read the raw "yes"
+approval_consumed  op_id=op_9b742ff3                         <- the op is on disk before any tool runs
+state_transition   AWAITING_APPROVAL -> EXECUTING
+tool_call  book key=book:appr_0654ac99 -> error: timeout     <- the booking exists, the reply was lost
+state_transition   EXECUTING -> VERIFYING (book_timeout)     <- never guess
+tool_call  get_booking_status -> booked, B-0003              <- source of truth, so no retry
+gate_decision      verified                                  <- only now may it say booked
+state_transition   VERIFYING -> DONE
+run_end  "Booked and verified: Bengaluru Tap Doctors..."     <- book ran once, one booking
 ```

@@ -51,7 +51,7 @@ Run this in a terminal:
 npm run eval
 ```
 
-"48 scenarios and a 500-seed sweep run offline. Every scenario checks 7 invariants, computed from the mock's own log."
+"51 scenarios and a 500-seed sweep run offline, and 3 of the scenarios replay real Sonnet responses. Every scenario checks 7 invariants, computed from the mock's own log."
 
 ## If something goes wrong
 

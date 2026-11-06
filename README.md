@@ -26,7 +26,9 @@ Then open http://localhost:4000. Add your key to `.env` before running the demo.
 | `npm run eval` | Scenarios and sweep, then writes `docs/eval-table.md` and `docs/eval-results.json` |
 | `npm run typecheck` | TypeScript check |
 | `LIVE=1 npm run demo` | Chat and live trace at `localhost:4000` |
-| `LIVE=1 npm run record` | Re-records the real model responses in `fixtures/recordings/` |
+| `LIVE=1 npm run record` | Re-records the real Sonnet responses in `fixtures/recordings/`, with a spend cap |
+| `LIVE=1 npm run record -- --smoke happy-path` | Cheap wiring check on Haiku. Saves nothing |
+| `LIVE=1 npx tsx scripts/measure-tokens.ts` | Compares the local token estimate with real counts |
 | `npm run design:pdf` | Renders `docs/DESIGN.md` to one page |
 
 ## Architecture
@@ -67,15 +69,22 @@ finish(reason) --> one user message, state saved, trace closed
 
 **Scripted evals** use a fake model whose tool calls are written in the scenario. They prove that **the code around the model holds**: even when a model misbehaves on purpose, for example by obeying a prompt injection, code blocks it, and booking, recovery and memory rules stay correct. They do not prove that a real model will choose well, word things well, or follow the prompt. A scripted scenario passing says nothing about model quality.
 
-**Recorded evals** replay real `claude-sonnet-5-5` responses saved in `fixtures/recordings/`. They prove the code handles real response shapes, including thinking blocks, on those exact conversations. They do not prove the model would answer the same way today, and they only cover the conversations recorded.
+**Recorded evals** replay real `claude-sonnet-5-5` responses saved in `fixtures/recordings/`: a full booking, a prompt injection and a timeout after success. They prove the code handles real response shapes on those exact conversations. They do not prove the model would answer the same way today, and they only cover the conversations recorded.
 
 **The invariants can fail.** `tests/eval/invariants.test.ts` plants a violation of each one and checks that it is caught.
 
 **Neither kind of eval measures** how often a real model gets a conversation right. That would need many live runs scored for quality, which this project does not do.
 
+**What live runs found that evals could not.** Four of the bugs in `docs/BUGS.md` (6 to 9) only appeared against a real model or the real token counter. Scripted tests share the assumptions of whoever wrote them.
+
+## Measured on live runs
+
+One full booking on `claude-sonnet-5-5`: 5 model calls, about 21,500 input and 800 output tokens, about $0.05, with no call over 3.6 seconds. Tool schemas cost 2,783 tokens per call. The local token estimate ran 1.11 to 1.42 times the real count on the measured conversation. `docs/traces/timeout-after-success.jsonl` holds one conversation as 3 runs in order, because a run is one user message.
+
 ## Known gaps
 
 - **Model quality is not measured.** See above.
+- **Thinking blocks are only tested with scripted data.** Sonnet returned none on these simple recorded turns, so the rule for passing them back unchanged has never run against real blocks.
 - **Forgetting is exact text only.** It removes the stored value and the user's quoted words. A paraphrase elsewhere in chat stays.
 - **Traces are not scrubbed.** Forgetting clears everything that reaches the model, but `traces/` files are an audit log and keep old values.
 - **Evidence is a substring check.** A compromised model could quote a real user sentence to store a wrong value. It stops tool output from planting facts, not every misuse.
@@ -84,5 +93,8 @@ finish(reason) --> one user message, state saved, trace closed
 - **Unconfirmed outcomes wait.** An open op is checked again on the user's next message or at restart, not on a timer.
 - **Provider names are not marked as untrusted.** Reviews and descriptions are. Names come from the catalog and are shown as they are.
 - **One process, one user at a time.** The demo queues its work. Running several processes against one database is not handled.
-- **Budget excludes tool schemas.** The 3,000-token budget covers the prompt, state, memories and chat. Tool definitions are a fixed cost on top. The local estimate is deliberately high.
+- **Budget excludes tool schemas.** The 3,000-token budget covers the prompt, state, memories and chat. Tool definitions add 2,783 tokens per call on top, so real input is about 4,000 to 5,000 tokens.
+- **The token estimate is measured on one conversation.** It stayed above the real count there, but it is a ratio, not a tokenizer, and it leaves out thinking blocks.
+- **The last two messages always go in.** This keeps what the user is replying to, so the base context can pass its target. The 3,000-token limit is still enforced in the loop.
+- **Recorded fixtures do not check the prompt.** They replay responses in order, so a prompt change needs a new recording to mean anything.
 - **India time only.** Slots and dates assume IST.
