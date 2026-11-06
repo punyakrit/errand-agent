@@ -108,16 +108,20 @@ export async function handleApprovalReply(run: Run, text: string): Promise<Outco
     return undefined;
   }
 
-  // A repeated yes. Only when nothing else is in progress, or it could be
-  // the answer to a new question.
-  if (isPlainYes(text)) {
-    const last = run.deps.approvals.latestConsumed(run.userId);
-    if (last && (!task || task.task_id === last.task_id)) {
-      const op = run.deps.ops.byApproval(last.approval_id);
-      if (op?.state !== "failed") return repeatedResult(run, last);
-    }
-  }
-  return undefined;
+  return isPlainYes(text) ? repeatOfLastAction(run) : undefined;
+}
+
+// A yes counts as a repeat only if the action is still unresolved, or the last
+// thing we said was its result. Otherwise it answers something else, so it
+// goes to the model.
+function repeatOfLastAction(run: Run): Outcome | undefined {
+  const last = run.deps.approvals.latestConsumed(run.userId);
+  if (!last) return undefined;
+  const op = run.deps.ops.byApproval(last.approval_id);
+  if (!op || op.state === "failed") return undefined;
+  const stillOpen = op.state === "started";
+  const justReported = run.deps.chat.lastAssistantText(run.userId) === op.result;
+  return stillOpen || justReported ? repeatedResult(run, last) : undefined;
 }
 
 // The Approve button. Same rules as a chat yes, tied to one specific approval.
