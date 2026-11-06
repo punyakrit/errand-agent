@@ -1,10 +1,14 @@
 import type Anthropic from "@anthropic-ai/sdk";
 
-// A deliberately high local estimate, so tests stay offline and we stay under
-// budget. Real English text is closer to 4 characters per token. Live runs log
-// the real usage.input_tokens next to this figure.
+// Measured with scripts/measure-tokens.ts: JSON tool results run at about 2.4
+// characters per token, so 2.2 stays above the real count. English prose is
+// nearer 4, which makes this estimate high for chat text, as intended.
+const CHARS_PER_TOKEN = 2.2;
+
+// A local estimate, so tests stay offline. Live runs log the real
+// usage.input_tokens next to this figure.
 export function estimateTokens(text: string): number {
-  return Math.ceil(text.length / 3);
+  return Math.ceil(text.length / CHARS_PER_TOKEN);
 }
 
 function messageText(message: Anthropic.MessageParam): string {

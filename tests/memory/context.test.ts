@@ -127,7 +127,11 @@ describe("buildContext", () => {
     const db = made.agent.deps.db as DatabaseSync;
     seedLongChat(db, USER, 40);
     db.prepare("INSERT INTO messages (session_id, user_id, role, text, at) VALUES ('old', ?, 'user', ?, 0)").run(USER, "Please always send Ramesh-the-plumber to me");
-    seedLongChat(db, USER, 8); // pushes that message out of the recent turns
+    // Pushes that message out of the recent turns. Assistant messages only, so it
+    // stays the newest line in the summary and has to be scrubbed, not scrolled away.
+    for (let index = 0; index < 20; index++) {
+      db.prepare("INSERT INTO messages (session_id, user_id, role, text, at) VALUES ('old', ?, 'assistant', ?, 0)").run(USER, `Older reply number ${index} with some detail in it`);
+    }
     made.agent.deps.memory.remember(USER, "preferred_technician", "Ramesh-the-plumber", "plumber", "always send Ramesh-the-plumber");
 
     made.llm.add(say("ok"));
