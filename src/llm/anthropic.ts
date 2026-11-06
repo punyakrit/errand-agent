@@ -27,6 +27,13 @@ export class AnthropicLLM implements LLM {
     });
   }
 
+  // The real token count for a payload. Used to check the local estimate.
+  async countTokens(request: Pick<LlmRequest, "system" | "messages" | "tools">): Promise<number> {
+    const { system, messages, tools } = request;
+    const counted = await this.client.messages.countTokens({ model: this.model, system, messages, tools });
+    return counted.input_tokens;
+  }
+
   complete(request: LlmRequest): Promise<Anthropic.Message> {
     // tool_choice stays at its default of auto. Forced tools are a 400 on this
     // model, and thinking stays on its adaptive default.

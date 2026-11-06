@@ -65,3 +65,11 @@ Each entry was logged when it happened. The failing test was committed before th
 - **Effect:** the tool log hid the calls you most want to see, and they did not count towards the 20-call limit.
 - **Fix:** `dispatch()` now traces and counts any tool that did not reach the mock.
 - **Regression test:** `traces and counts a tool call that code stopped before it reached the provider` in `tests/agent/loop.test.ts`.
+
+## 9. The "conservative" token estimate was too low
+
+- **What broke:** measuring with `count_tokens` showed the local estimate 19% below the real count on a JSON-heavy payload: 1,441 estimated against 1,769 real.
+- **Why:** I assumed 3 characters per token and called that high. JSON tool results tokenise much more densely than English, at about 2.4 characters per token.
+- **Effect:** the budget check and invariant 7 could pass on a payload that was really over budget.
+- **Fix:** the estimate now uses 2.2 characters per token, chosen from the measurement, and the budgets were rebalanced to suit.
+- **Regression test:** `is never below the real count measured for a JSON-heavy conversation` in `tests/agent/tokens.test.ts`.

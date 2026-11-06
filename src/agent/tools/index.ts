@@ -38,6 +38,7 @@ function resultBlock(block: Anthropic.ToolUseBlock, result: object, isError = fa
 
 function badInput(run: Run, block: Anthropic.ToolUseBlock, detail: object): Anthropic.ToolResultBlockParam {
   run.badInputs += 1;
+  run.toolCalls += 1;
   run.trace.emit("tool_call", { name: block.name, args: block.input, error: "bad_input", detail });
   if (run.badInputs >= run.deps.limits.maxBadToolInputs) run.end = { reason: "bad_tool_input" };
   return resultBlock(block, { error: "bad_input", ...detail }, true);
@@ -53,17 +54,20 @@ export async function dispatch(run: Run, block: Anthropic.ToolUseBlock): Promise
   if (!parsed.success) return badInput(run, block, { issues: parsed.error.issues.map((issue) => issue.message) });
 
   const started = performance.now();
+  const callsBefore = run.toolCalls;
+  // A mock tool that reached the mock has already traced itself, once per
+  // attempt. Everything else is traced here, including calls code stopped early.
+  const tracedItself = () => MOCK_TOOL_NAMES.includes(block.name) && run.toolCalls > callsBefore;
   try {
     const result = await tool.run(run, parsed.data as never);
-    // Mock tools trace themselves, one event per attempt.
-    if (!MOCK_TOOL_NAMES.includes(block.name)) {
+    if (!tracedItself()) {
       run.toolCalls += 1;
       const latency_ms = Math.round(performance.now() - started);
       run.trace.emit("tool_call", { name: block.name, args: parsed.data, result, latency_ms, attempt: 1 });
     }
     return resultBlock(block, result);
   } catch (error) {
-    if (!MOCK_TOOL_NAMES.includes(block.name)) {
+    if (!tracedItself()) {
       run.toolCalls += 1;
       run.trace.emit("tool_call", { name: block.name, args: parsed.data, error: String(error) });
     }
