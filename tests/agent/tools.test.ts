@@ -157,6 +157,23 @@ describe("hold_slot", () => {
     expect(events("gate_decision")[0]).toMatchObject({ decision: "hold_blocked", because: "user_must_pick" });
   });
 
+  it("a repeat search in the same message does not undo the user's pick", async () => {
+    const { send, llm, mock } = await searched();
+    llm.add(tool("search_providers", PLUMBER_SEARCH), tool("hold_slot", { provider_id: "pl_1", slot: SHARMA_SLOT }), say("ok"));
+    await send("Sharma at 9 on Tuesday");
+    expect(mock.calls("hold_slot")).toHaveLength(1);
+  });
+
+  it("a provider that first appears in this message still needs a pick", async () => {
+    const { send, llm, mock, task } = await searched();
+    const options = task()!.details.options!;
+    expect(options.map((option) => option.provider_id)).toContain("pl_1");
+    llm.add(tool("update_request", { area: "Whitefield" }), tool("search_providers", { ...PLUMBER_SEARCH, area: "Whitefield" }), tool("hold_slot", { provider_id: "pl_6", slot: "2026-11-10T09:00:00+05:30" }), say("ok"));
+    await send("try Whitefield");
+    expect(lastToolResult(llm)).toEqual({ error: "user_must_pick" });
+    expect(mock.calls("hold_slot")).toHaveLength(0);
+  });
+
   it("is blocked before a search", async () => {
     const { send, llm, mock } = makeAgent([tool("update_request", PLUMBER_REQUEST), tool("hold_slot", { provider_id: "pl_1", slot: SHARMA_SLOT }), say("ok")]);
     await send("plumber");

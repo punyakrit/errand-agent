@@ -12,10 +12,13 @@ function keyFromDotEnv(): string {
 
 export class AnthropicLLM implements LLM {
   private client: Anthropic;
+  private model: string;
 
-  constructor() {
+  // The default is the model this project uses. Only smoke tests pass another.
+  constructor(model: string = MODEL) {
     // Tests and evals must never reach the network.
     if (process.env.LIVE !== "1") throw new Error("AnthropicLLM needs LIVE=1");
+    this.model = model;
     this.client = new Anthropic({
       apiKey: keyFromDotEnv(),
       authToken: null, // ignore any token in the shell
@@ -29,7 +32,7 @@ export class AnthropicLLM implements LLM {
     // model, and thinking stays on its adaptive default.
     return this.client.messages.create(
       {
-        model: MODEL,
+        model: this.model,
         max_tokens: MAX_OUTPUT_TOKENS,
         system: request.system,
         messages: request.messages,

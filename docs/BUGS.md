@@ -41,3 +41,11 @@ Each entry was logged when it happened. The failing test was committed before th
 - **Effect:** the page could sit in a pending state with no sign that it was connected, until something else caused an event.
 - **Fix:** `openEventStream` now writes an SSE comment straight away, which sends the headers.
 - **Regression test:** `delivers over a real server-sent event stream` in `tests/demo/server.test.ts`.
+
+## 6. A repeat search cancelled the user's pick
+
+- **What broke:** in the first live smoke run, the user picked a provider, the model searched again in that same message, and `hold_slot` was blocked with `user_must_pick`. The agent then told the user "the system wants you to pick the option yourself", and it never got past that point.
+- **Why:** `saveOptions` stamped the current message ID on the options every time, even when the user had already seen them. The check read that as "these options are new, so the user cannot have picked yet".
+- **Effect:** a real user would be stuck in a loop. Scripted tests missed it because I wrote them assuming a tidy model that never searches twice.
+- **Fix:** each option now remembers the message it was first offered in, and a repeat search keeps that value. A provider that is new in this message still needs a pick.
+- **Regression test:** `a repeat search in the same message does not undo the user's pick` in `tests/agent/tools.test.ts`.

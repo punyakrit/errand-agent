@@ -1,6 +1,7 @@
 // Every limit and price in one place, so they are easy to find and explain.
 
 export const MODEL = "claude-sonnet-5-5";
+export const SMOKE_MODEL = "claude-haiku-5-5"; // cheap wiring checks only, never recordings
 export const EFFORT = "medium";
 export const MAX_OUTPUT_TOKENS = 8192; // includes thinking
 
