@@ -53,6 +53,13 @@ describe("selectMemories", () => {
     expect(included.map((item) => item.id)).toEqual([service.id, core.id, plain.id]);
   });
 
+  it("keeps a core preference when many service notes compete for the budget", () => {
+    const earliest = memory({ key: "earliest_time", value: "09:00" });
+    const notes = Array.from({ length: 30 }, (_, index) => memory({ key: `plumber_note_${index}`, scope: "plumber", value: `detail ${index}` }));
+    const { included } = selectMemories([...notes, earliest], "plumber", "Indiranagar", 120);
+    expect(included.map((item) => item.key)).toContain("earliest_time");
+  });
+
   it("trims to budget and reports what was cut", () => {
     const facts = Array.from({ length: 20 }, (_, index) => memory({ key: `note_${index}` }));
     const { included, excluded } = selectMemories(facts, undefined, undefined, 50);

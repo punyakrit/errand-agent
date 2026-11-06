@@ -14,5 +14,5 @@ export function handleMemoryCommand(run: Run, text: string): Outcome | undefined
   }
   run.deps.memory.confirm(run.userId, id);
   run.trace.emit("gate_decision", { decision: "memory_confirmed_by_user", id });
-  return { reason: "reply", text: `Thanks, I have confirmed that (ID ${id}).` };
+  return { reason: "reply", text: `Thanks. I will use that from now on (ID ${id}).` };
 }

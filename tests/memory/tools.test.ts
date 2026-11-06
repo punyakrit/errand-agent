@@ -126,7 +126,7 @@ describe("confirming an inferred fact", () => {
     const { send, agent, llm } = makeAgent([]);
     const id = agent.deps.memory.infer(USER, "usual_provider", "Voltline Electricals", "global", "booking:B-0001")!;
     const reply = await send(`confirm ${id}`);
-    expect(reply.reply).toContain("confirmed");
+    expect(reply.reply).toContain("use that from now on");
     expect(llm.requests).toHaveLength(0);
     llm.add(say("ok"));
     await send("hello");

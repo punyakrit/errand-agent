@@ -25,3 +25,11 @@ Each entry was logged when it happened. The failing test was committed before th
 - **Effect:** the model would answer as if nothing had happened, and could ask the user to explain their own cancelled booking.
 - **Fix:** leading assistant messages now stay. A short fixed user line goes in front of them, so the first message is still from the user.
 - **Regression test:** `the model sees the notice in chat history on the next message` in `tests/monitor/monitor.test.ts`.
+
+## 4. A core preference was crowded out by minor notes
+
+- **What broke:** eval scenario 29 (50+ memories) failed: `earliest_time` was missing from the payload, so a user's "not before 9" could be silently dropped.
+- **Why:** `score()` in `src/memory/select.ts` gave service scope more weight than being a core preference. Thirty minor plumber notes all ranked above `earliest_time`, and they used up the memory budget first.
+- **Effect:** the more a user had stored, the more likely their important preferences were to vanish. The earlier unit test missed it because the fact it checked also got a bonus for mentioning the current area.
+- **Fix:** a core preference now outweighs service scope, so core keys are selected before notes.
+- **Regression test:** `keeps a core preference when many service notes compete for the budget` in `tests/memory/select.test.ts`, plus eval scenario 29.
