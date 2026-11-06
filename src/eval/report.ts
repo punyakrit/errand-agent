@@ -6,7 +6,7 @@ function show(facts: Facts): string {
   return Object.entries(facts).map(([key, value]) => `${key}=${JSON.stringify(value)}`).join(", ").replaceAll("|", "\\|");
 }
 
-export function eventTable(results: ScenarioResult[], sweep: SweepResult, command: string): string {
+export function evalTable(results: ScenarioResult[], sweep: SweepResult, command: string): string {
   const passed = results.filter((result) => result.pass).length;
   const lines = [
     "# Eval table",

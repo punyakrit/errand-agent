@@ -1,5 +1,5 @@
 import { mkdirSync, writeFileSync } from "node:fs";
-import { eventTable } from "./report.ts";
+import { evalTable } from "./report.ts";
 import { runScenario } from "./runner.ts";
 import { SCENARIOS } from "./scenarios/index.ts";
 import { runSweep } from "./sweep.ts";
@@ -10,7 +10,7 @@ for (const scenario of SCENARIOS) results.push(await runScenario(scenario));
 const sweep = await runSweep(500);
 
 mkdirSync("docs", { recursive: true });
-writeFileSync("docs/eval-table.md", eventTable(results, sweep, "npm run eval"));
+writeFileSync("docs/eval-table.md", evalTable(results, sweep, "npm run eval"));
 writeFileSync("docs/eval-results.json", `${JSON.stringify({ results, sweep }, null, 2)}\n`);
 
 for (const result of results) {
