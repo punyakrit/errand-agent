@@ -1,11 +1,16 @@
 // All time in the system comes through a Clock so tests can control it.
 export interface Clock {
   now(): number; // epoch milliseconds
+  sleep(ms: number): Promise<void>;
 }
 
 export class SystemClock implements Clock {
   now(): number {
     return Date.now();
+  }
+
+  sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 
@@ -22,6 +27,11 @@ export class FakeClock implements Clock {
 
   advance(ms: number): void {
     this.current += ms;
+  }
+
+  // Waiting on a fake clock just moves it forward.
+  async sleep(ms: number): Promise<void> {
+    this.advance(ms);
   }
 }
 
