@@ -37,3 +37,38 @@ export const RECORDED_RUNS: RecordedRun[] = [
     traceFile: "docs/traces/timeout-after-success.jsonl",
   },
 ];
+
+// Live checks of the other flows. Run with --smoke and never saved.
+export const SMOKE_RUNS: RecordedRun[] = [
+  {
+    name: "move-ac",
+    note: "PDF example 2.",
+    messages: ["Move my AC servicing to Saturday.", "Noon please.", "yes"],
+  },
+  {
+    name: "same-electrician",
+    note: "PDF example 3.",
+    messages: [
+      "Book the same electrician as last time, but not before 10 a.m.",
+      "Indiranagar, any day this week, any price is fine.",
+      "The earliest slot, please.",
+      "yes",
+    ],
+    setup: (world) => world.mock.configure({ forceBook: ["success"] }),
+  },
+  {
+    name: "cancel-ac",
+    note: "Cancel, with the 503 and retry.",
+    messages: ["Cancel my AC servicing.", "yes"],
+  },
+  {
+    name: "memory",
+    note: "Remember, inspect and forget from chat.",
+    messages: [
+      "Please remember that I always want Koramangala for home jobs.",
+      "What do you remember about me?",
+      "Please forget my preferred area.",
+      "What do you remember about me?",
+    ],
+  },
+];

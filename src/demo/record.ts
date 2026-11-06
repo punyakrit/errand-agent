@@ -1,6 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { MODEL, SMOKE_MODEL } from "../config.ts";
-import { RECORDED_RUNS, recordingPath } from "../eval/recorded-runs.ts";
+import { RECORDED_RUNS, recordingPath, SMOKE_RUNS } from "../eval/recorded-runs.ts";
 import { World } from "../eval/world.ts";
 import { AnthropicLLM } from "../llm/anthropic.ts";
 import { RecordingLLM } from "../llm/recorded.ts";
@@ -36,7 +36,8 @@ function report(world: World): void {
 }
 
 let spentBefore = 0;
-for (const recorded of RECORDED_RUNS.filter((item) => !only || item.name === only)) {
+const runs = smoke ? [...RECORDED_RUNS, ...SMOKE_RUNS] : RECORDED_RUNS;
+for (const recorded of runs.filter((item) => !only || item.name === only)) {
   const real = new AnthropicLLM(model);
   // A smoke run saves nothing, so a cheaper model can never reach the fixtures.
   const llm = smoke ? real : new RecordingLLM(real, recordingPath(recorded.name), `${recorded.note} Model: ${model}.`);

@@ -81,6 +81,8 @@ finish(reason) --> one user message, state saved, trace closed
 
 One full booking on `claude-sonnet-5-5`: 5 model calls, about 21,500 input and 800 output tokens, about $0.05, with no call over 3.6 seconds. Tool schemas cost 2,783 tokens per call. The local token estimate ran 1.11 to 1.42 times the real count on the measured conversation. `docs/traces/timeout-after-success.jsonl` holds one conversation as 3 runs in order, because a run is one user message.
 
+**What has run on a real model.** On `claude-sonnet-5-5`: full booking, prompt injection, timeout after success, and a full booking through the demo server. On `claude-haiku-5-5`, as a cheap smoke check with nothing saved: moving the AC service, the same electrician as last time, cancelling, and remembering and forgetting from chat. **Not run on a real model:** picking a replacement after a provider cancels, a request that matches two bookings, and crash recovery. Each of those has scripted coverage only.
+
 ## Known gaps
 
 - **Model quality is not measured.** See above.
