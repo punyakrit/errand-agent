@@ -3,6 +3,7 @@ import { istDate } from "../clock.ts";
 import { CONTEXT } from "../config.ts";
 import { memoryLine, selectMemories } from "../memory/select.ts";
 import type { ChatMessage } from "./chat.ts";
+import { optionsForModel } from "./options.ts";
 import { SYSTEM_PROMPT } from "./prompt.ts";
 import { missingFields } from "./request.ts";
 import type { Run } from "./run.ts";
@@ -20,11 +21,18 @@ export interface BuiltContext {
 
 function taskBlock(task: Task | undefined): string {
   if (!task) return "No active task.";
+  const { options, hold, target_booking: target, new_slot: newSlot } = task.details;
   return JSON.stringify({
     kind: task.kind,
     state: task.state,
     request: task.request,
-    missing: missingFields(task.kind, task.request, task.details.target_booking !== undefined),
+    missing: missingFields(task.kind, task.request, target !== undefined),
+    // History is plain text between messages, so the IDs and exact slots the
+    // model needs for a pick have to come from here.
+    options: options?.length ? optionsForModel(options) : undefined,
+    hold: hold ? { provider_id: hold.provider_id, slot: hold.slot, price: hold.price } : undefined,
+    target_booking: target,
+    new_slot: newSlot,
   });
 }
 
@@ -36,14 +44,17 @@ function clip(text: string): string {
 // message before it, so this line goes in front rather than dropping the notice.
 const CONTINUING = "(Continuing our conversation.)";
 
-// Newest messages that fit, always including the current one.
+// Newest messages that fit. The current message and the one it answers always
+// go in, or the model could miss what the user is replying to.
+const ALWAYS_KEPT = 2;
+
 function pickRecent(history: ChatMessage[], budgetTokens: number): ChatMessage[] {
   const recent: ChatMessage[] = [];
   let used = 0;
   for (let index = history.length - 1; index >= 0 && recent.length < CONTEXT.recentMessages; index--) {
     const message = history[index]!;
     const cost = estimateTokens(clip(message.text));
-    if (recent.length > 0 && used + cost > budgetTokens) break;
+    if (recent.length >= ALWAYS_KEPT && used + cost > budgetTokens) break;
     recent.unshift(message);
     used += cost;
   }

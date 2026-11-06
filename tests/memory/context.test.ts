@@ -114,6 +114,31 @@ describe("context_manifest", () => {
   });
 });
 
+describe("task state in the context", () => {
+  it("gives the next message the exact options, so it need not search again", async () => {
+    const made = makeAgent([
+      tool("update_request", PLUMBER_REQUEST),
+      tool("search_providers", { service: "plumber", area: "Indiranagar", date_range: { from: "2026-11-09", to: "2026-11-15" } }),
+      say("Pick one."),
+    ]);
+    await made.send("plumber");
+    made.llm.add(say("ok"));
+    await made.send("the first one");
+    const system = made.llm.requests.at(-1)!.system;
+    expect(system).toContain('"provider_id":"pl_3"');
+    expect(system).toContain("2026-11-10T09:00:00+05:30");
+    expect(system).not.toContain("offered_in_message");
+  });
+
+  it("shows the booking being changed", async () => {
+    const made = makeAgent([tool("update_request", { kind: "cancel", service: "ac_service" }), say("Shall I?")]);
+    await made.send("cancel my AC service");
+    made.llm.add(say("ok"));
+    await made.send("hmm");
+    expect(made.llm.requests.at(-1)!.system).toContain("B-0002");
+  });
+});
+
 describe("buildContext", () => {
   it("is deterministic", async () => {
     const made = seeded();
