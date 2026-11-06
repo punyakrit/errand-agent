@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.*
+!.env.example
+.claude/
+data/
+/traces/
+*.sqlite
+*.sqlite-*
+Orange_Engineering_Assignment.pdf
+orange-invest-assignment*.pdf
+.DS_Store
