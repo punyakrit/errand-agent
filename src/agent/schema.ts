@@ -52,6 +52,21 @@ export function createAgentSchema(db: DatabaseSync): void {
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL
     );
+    -- The last status the monitor saw for each booking.
+    CREATE TABLE IF NOT EXISTS seen_bookings (
+      booking_id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      status TEXT NOT NULL
+    );
+    -- One row per provider cancellation, so each is handled once across restarts.
+    CREATE TABLE IF NOT EXISTS proactive_events (
+      booking_id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      decision TEXT NOT NULL, -- rebook, log_only
+      state TEXT NOT NULL, -- started, handled
+      task_id TEXT,
+      at INTEGER NOT NULL
+    );
     -- Messages for a user who is not connected right now.
     CREATE TABLE IF NOT EXISTS outbox (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

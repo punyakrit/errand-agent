@@ -45,6 +45,11 @@ export class Agent {
     };
   }
 
+  // For work with no user message behind it, such as a monitor tick.
+  startBackgroundRun(sessionId: string, userId: string, kind: string): Run {
+    return new Run(this.deps, sessionId, userId, 0, this.sink.startRun(sessionId, kind));
+  }
+
   async handleMessage(sessionId: string, userId: string, text: string): Promise<AgentReply> {
     const messageId = this.deps.chat.add(sessionId, userId, "user", text);
     const run = new Run(this.deps, sessionId, userId, messageId, this.sink.startRun(sessionId, "user_message"));

@@ -30,7 +30,7 @@ export interface AgentDeps {
 
 // Named points in an action. Production ignores them. Tests use them to crash
 // the process, or to change something at an exact moment.
-export type Checkpoint = "approval_granted" | "op_started" | "book_returned";
+export type Checkpoint = "approval_granted" | "op_started" | "book_returned" | "rebook_task_created";
 
 export interface Outcome {
   reason: FinishReason;

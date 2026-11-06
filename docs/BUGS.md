@@ -17,3 +17,11 @@ Each entry was logged when it happened. The failing test was committed before th
 - **Effect:** no second booking, because the approval was already used, but the user got a wrong answer and the model never saw their message.
 - **Fix:** a yes counts as a repeat only if the last assistant message was that action's result, or the action is still unresolved.
 - **Regression test:** `a yes long after a finished booking is not treated as a repeat` in `tests/agent/approval.test.ts`.
+
+## 3. The model never saw proactive notices
+
+- **What broke:** after a provider cancelled, the user asked "what happened?" and the payload sent to the model had no mention of the notice the user had just read.
+- **Why:** `pickRecent` in `src/agent/context.ts` removed assistant messages from the start of the window, because the first message sent must come from the user. A proactive notice or reconcile result has no user message before it, so it was always removed. The older-chat summary keeps only user lines, so nothing else carried it.
+- **Effect:** the model would answer as if nothing had happened, and could ask the user to explain their own cancelled booking.
+- **Fix:** leading assistant messages now stay. A short fixed user line goes in front of them, so the first message is still from the user.
+- **Regression test:** `the model sees the notice in chat history on the next message` in `tests/monitor/monitor.test.ts`.

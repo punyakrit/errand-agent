@@ -71,7 +71,8 @@ export const updateRequest = defineTool({
     if (invalid) return { error: "invalid_field", field: invalid };
 
     let task = run.activeTask();
-    if (task && kind && task.kind !== kind) {
+    const sameKind = task?.kind === kind || (task?.kind === "rebook_after_provider_cancel" && kind === "book");
+    if (task && kind && !sameKind) {
       voidOpenApprovals(run, task, "task_replaced");
       run.setState(task, "FAILED", { because: "replaced_by_new_request" });
       task = undefined;
